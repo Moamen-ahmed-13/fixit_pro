@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1044264109115",
+    "project_id": "fixi-pro",
+    "storage_bucket": "fixi-pro.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1044264109115:android:5e31506e6c85f4851d881e",
+        "android_client_info": {
+          "package_name": "com.example.fixit_pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApJosoAndy0w0SygY1UE_Eq0NKeFUenUY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
