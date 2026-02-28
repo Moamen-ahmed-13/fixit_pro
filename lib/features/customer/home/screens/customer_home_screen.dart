@@ -1,6 +1,49 @@
+// ────────────────────────────────────────────────────────────────────────────
+// REPLACE in lib/features/customer/home/screens/customer_home_screen.dart
+// Only the _CustomerHomeViewState and the placeholder tabs at the bottom
+// ────────────────────────────────────────────────────────────────────────────
+//
+// 1) Change the placeholder tabs to real screens:
+//
+// class _CustomerHomeViewState extends State<_CustomerHomeView> {
+//   int _currentTab = 0;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: AppColors.bgDark,
+//       body: IndexedStack(
+//         index: _currentTab,
+//         children: [
+//           _HomeTab(),
+//           const CustomerOrdersScreen(),      // ← real
+//           const NotificationsScreen(),        // ← real
+//           const CustomerProfileScreen(),      // ← real
+//         ],
+//       ),
+//       bottomNavigationBar: _BottomNav(
+//         currentIndex: _currentTab,
+//         onTap: (i) => setState(() => _currentTab = i),
+//       ),
+//     );
+//   }
+// }
+//
+// 2) Add imports at the top:
+// import 'package:fixit_pro/features/customer/orders/customer_orders_screen.dart';
+// import 'package:fixit_pro/features/shared/notifications/notifications_screen.dart';
+// import 'package:fixit_pro/features/customer/profile/customer_profile_screen.dart';
+//
+// ────────────────────────────────────────────────────────────────────────────
+// Full updated file below:
+// ────────────────────────────────────────────────────────────────────────────
+
 import 'package:fixit_pro/features/customer/home/order_card.dart';
 import 'package:fixit_pro/features/customer/home/order_model.dart';
 import 'package:fixit_pro/features/customer/home/service_card.dart';
+import 'package:fixit_pro/features/customer/orders/customer_orders_screen.dart';
+import 'package:fixit_pro/features/customer/profile/customer_profile_screen.dart';
+import 'package:fixit_pro/features/shared/notifications/notifications_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/home_bloc.dart';
@@ -35,9 +78,9 @@ class _CustomerHomeViewState extends State<_CustomerHomeView> {
         index: _currentTab,
         children: [
           _HomeTab(),
-          const _OrdersTab(),
-          const _NotificationsTab(),
-          const _ProfileTab(),
+          const CustomerOrdersScreen(),
+          const NotificationsScreen(),
+          const CustomerProfileScreen(),
         ],
       ),
       bottomNavigationBar: _BottomNav(
@@ -94,15 +137,9 @@ class _HomeTab extends StatelessWidget {
             child: CustomScrollView(
               slivers: [
 
-                // ── Header ────────────────────────────────────────────
-                SliverToBoxAdapter(
-                  child: _Header(userName: userName),
-                ),
-
-                // ── Banner ────────────────────────────────────────────
+                SliverToBoxAdapter(child: _Header(userName: userName)),
                 SliverToBoxAdapter(child: _PromoBanner()),
 
-                // ── خدماتنا ───────────────────────────────────────────
                 const SliverToBoxAdapter(
                   child: _SectionTitle(title: 'خدماتنا', showAll: false),
                 ),
@@ -132,7 +169,6 @@ class _HomeTab extends StatelessWidget {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                // ── الطلبات النشطة ────────────────────────────────────
                 if (data != null && data.activeOrders.isNotEmpty) ...[
                   const SliverToBoxAdapter(
                     child: _SectionTitle(title: 'طلباتي النشطة'),
@@ -153,7 +189,6 @@ class _HomeTab extends StatelessWidget {
                   const SliverToBoxAdapter(child: SizedBox(height: 8)),
                 ],
 
-                // ── آخر الطلبات ───────────────────────────────────────
                 if (data != null && data.recentOrders.isNotEmpty) ...[
                   const SliverToBoxAdapter(
                     child: _SectionTitle(title: 'آخر الطلبات', showAll: true),
@@ -166,7 +201,6 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ],
 
-                // مسافة للـ bottom nav
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
               ],
             ),
@@ -228,7 +262,6 @@ class _Header extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              // أيقونة الإشعارات
               Stack(
                 children: [
                   Container(
@@ -257,11 +290,8 @@ class _Header extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Search Bar
           GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, '/customer/search');
-            }, // TODO: search screen
+            onTap: () => Navigator.pushNamed(context, '/customer/search'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
@@ -385,27 +415,23 @@ class _SectionTitle extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textMain,
-            ),
-          ),
+          Text(title,
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMain,
+              )),
           if (showAll)
             GestureDetector(
               onTap: () {},
-              child: const Text(
-                'الكل',
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 12,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: const Text('الكل',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 12,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  )),
             ),
         ],
       ),
@@ -437,51 +463,43 @@ class _RecentOrderTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: Text(order.deviceEmoji,
-                  style: const TextStyle(fontSize: 20)),
-            ),
+                child: Text(order.deviceEmoji,
+                    style: const TextStyle(fontSize: 20))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${order.deviceType} ${order.brand}',
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMain,
-                  ),
-                ),
-                Text(
-                  order.issue,
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                  ),
-                ),
+                Text('${order.deviceType} ${order.brand}',
+                    style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMain,
+                    )),
+                Text(order.issue,
+                    style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    )),
               ],
             ),
           ),
-          // التقييم لو موجود
           if (order.rating != null)
             Row(
               children: [
                 const Icon(Icons.star_rounded,
                     color: AppColors.warning, size: 14),
                 const SizedBox(width: 3),
-                Text(
-                  order.rating!.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.warning,
-                  ),
-                ),
+                Text(order.rating!.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.warning,
+                    )),
               ],
             )
           else
@@ -491,15 +509,13 @@ class _RecentOrderTile extends StatelessWidget {
                 color: AppColors.accent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                '✅ مكتمل',
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 10,
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              child: const Text('✅ مكتمل',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 10,
+                    color: AppColors.accent,
+                    fontWeight: FontWeight.w700,
+                  )),
             ),
         ],
       ),
@@ -551,26 +567,22 @@ class _BottomNav extends StatelessWidget {
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Icon(
-                          items[i].icon,
-                          color: active
-                              ? AppColors.primary
-                              : AppColors.textMuted,
-                          size: 24,
-                        ),
+                        child: Icon(items[i].icon,
+                            color: active
+                                ? AppColors.primary
+                                : AppColors.textMuted,
+                            size: 24),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        items[i].label,
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: active
-                              ? AppColors.primary
-                              : AppColors.textMuted,
-                        ),
-                      ),
+                      Text(items[i].label,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: active
+                                ? AppColors.primary
+                                : AppColors.textMuted,
+                          )),
                     ],
                   ),
                 ),
@@ -581,32 +593,4 @@ class _BottomNav extends StatelessWidget {
       ),
     );
   }
-}
-
-// ─── Placeholder Tabs ─────────────────────────────────────────────────────────
-class _OrdersTab extends StatelessWidget {
-  const _OrdersTab();
-  @override
-  Widget build(BuildContext context) => const Center(
-        child: Text('📋 طلباتي',
-            style: TextStyle(fontFamily: 'Cairo', color: AppColors.textMain)),
-      );
-}
-
-class _NotificationsTab extends StatelessWidget {
-  const _NotificationsTab();
-  @override
-  Widget build(BuildContext context) => const Center(
-        child: Text('🔔 الإشعارات',
-            style: TextStyle(fontFamily: 'Cairo', color: AppColors.textMain)),
-      );
-}
-
-class _ProfileTab extends StatelessWidget {
-  const _ProfileTab();
-  @override
-  Widget build(BuildContext context) => const Center(
-        child: Text('👤 حسابي',
-            style: TextStyle(fontFamily: 'Cairo', color: AppColors.textMain)),
-      );
 }

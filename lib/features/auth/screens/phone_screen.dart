@@ -44,7 +44,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   void _submit() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
-            PhoneSubmitted(_phoneController.text.trim()),
+            AuthPhoneSubmitted(_phoneController.text.trim()),
           );
     }
   }

@@ -1,172 +1,165 @@
-import 'dart:async';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-part 'auth_event.dart';
-part 'auth_state.dart';
+// ─── Events ───────────────────────────────────────────────────────────────────
+abstract class AuthEvent {}
 
-// ─── Internal events (مش بيشوفهم المستخدم) ──────────────────────────────────
-class _AutoVerified extends AuthEvent {
-  final PhoneAuthCredential credential;
-  _AutoVerified(this.credential);
+class AuthPhoneSubmitted extends AuthEvent {
+  final String phone;
+  AuthPhoneSubmitted(this.phone);
 }
 
-class _VerificationFailed extends AuthEvent {
-  final String code;
-  _VerificationFailed(this.code);
+class AuthOtpSubmitted extends AuthEvent {
+  final String otp;
+  AuthOtpSubmitted(this.otp);
 }
 
-// ─── BLoC ─────────────────────────────────────────────────────────────────────
+class AuthRoleSelected extends AuthEvent {
+  final String role;
+  AuthRoleSelected(this.role);
+}
+
+class AuthCheckStatus extends AuthEvent {}
+
+// ─── States ───────────────────────────────────────────────────────────────────
+abstract class AuthState {}
+
+class AuthInitial extends AuthState {}
+
+class AuthLoading extends AuthState {}
+
+class AuthOtpSent extends AuthState {
+  final String verificationId;
+  AuthOtpSent(this.verificationId);
+}
+
+class AuthOtpError extends AuthState {
+  final String message;
+  AuthOtpError(this.message);
+}
+
+class AuthPhoneError extends AuthState {
+  final String message;
+  AuthPhoneError(this.message);
+}
+
+/// يوصل لده لما المستخدم لسه ماختارش دور (أول مرة)
+class AuthNeedsRoleSelection extends AuthState {}
+
+/// يوصل لده لما الـ role محفوظ — يروح على الشاشة الصح مباشرة
+class AuthAuthenticated extends AuthState {
+  final String role;   // 'customer' | 'technician' | 'admin'
+  AuthAuthenticated(this.role);
+}
+
+// ─── Bloc ─────────────────────────────────────────────────────────────────────
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
 
   String? _verificationId;
-  String? _pendingPhone;
 
   AuthBloc() : super(AuthInitial()) {
-    on<PhoneSubmitted>(_onPhoneSubmitted);
-    on<VerificationCodeSent>(_onVerificationCodeSent);
-    on<OtpSubmitted>(_onOtpSubmitted);
-    on<ResetAuth>((_, emit) => emit(AuthInitial()));
-    // Internal handlers
-    on<_AutoVerified>(_onAutoVerified);
-    on<_VerificationFailed>(_onVerificationFailed);
+    on<AuthCheckStatus>(_onCheckStatus);
+    on<AuthPhoneSubmitted>(_onPhoneSubmitted);
+    on<AuthOtpSubmitted>(_onOtpSubmitted);
+    on<AuthRoleSelected>(_onRoleSelected);
   }
 
-  // ─── إرسال OTP ────────────────────────────────────────────────────────────
-  // الحل الصح: Completer يخلي الـ Future تستنى لحد ما أول callback ييجي
-  // بدل ما نستخدم emit جوه الـ callbacks (ده اللي بيسبب الـ assertion error)
-  Future<void> _onPhoneSubmitted(
-    PhoneSubmitted event,
-    Emitter<AuthState> emit,
-  ) async {
-    emit(AuthPhoneLoading());
-    _pendingPhone = event.phoneNumber;
-
-    final completer = Completer<void>();
-
-    await _auth.verifyPhoneNumber(
-      phoneNumber: '+2${event.phoneNumber}',
-      timeout: const Duration(seconds: 60),
-
-      verificationCompleted: (PhoneAuthCredential credential) {
-        if (!completer.isCompleted) completer.complete();
-        add(_AutoVerified(credential));
-      },
-
-      verificationFailed: (FirebaseAuthException e) {
-        if (!completer.isCompleted) completer.complete();
-        add(_VerificationFailed(e.code));
-      },
-
-      codeSent: (String verificationId, int? resendToken) {
-        _verificationId = verificationId;
-        if (!completer.isCompleted) completer.complete();
-        add(VerificationCodeSent(verificationId));
-      },
-
-      codeAutoRetrievalTimeout: (String verificationId) {
-        _verificationId = verificationId;
-        if (!completer.isCompleted) completer.complete();
-      },
-    );
-
-    await completer.future;
-  }
-
-  void _onVerificationCodeSent(
-    VerificationCodeSent event,
-    Emitter<AuthState> emit,
-  ) {
-    emit(AuthOtpSent(_pendingPhone ?? ''));
-  }
-
-  // ─── التحقق من الـ OTP ────────────────────────────────────────────────────
-  Future<void> _onOtpSubmitted(
-    OtpSubmitted event,
-    Emitter<AuthState> emit,
-  ) async {
-    if (_verificationId == null) {
-      emit(AuthError('انتهت الجلسة، حاول مرة تانية'));
+  /// يُشغَّل عند بدء الـ app — لو المستخدم مسجل دخول بالفعل
+  Future<void> _onCheckStatus(
+      AuthCheckStatus event, Emitter<AuthState> emit) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      emit(AuthInitial());
       return;
     }
-    emit(AuthOtpVerifying());
+    emit(AuthLoading());
+    await _routeByRole(user.uid, emit);
+  }
+
+  /// إرسال رقم الهاتف
+  Future<void> _onPhoneSubmitted(
+      AuthPhoneSubmitted event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    await _auth.verifyPhoneNumber(
+      phoneNumber: event.phone,
+      timeout: const Duration(seconds: 60),
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Auto-verify (Android only)
+        try {
+          final result = await _auth.signInWithCredential(credential);
+          await _handleSignIn(result.user!.uid, emit);
+        } catch (_) {}
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        emit(AuthPhoneError(e.message ?? 'خطأ في الاتصال'));
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        _verificationId = verificationId;
+        emit(AuthOtpSent(verificationId));
+      },
+      codeAutoRetrievalTimeout: (_) {},
+    );
+  }
+
+  /// التحقق من الـ OTP
+  Future<void> _onOtpSubmitted(
+      AuthOtpSubmitted event, Emitter<AuthState> emit) async {
+    if (_verificationId == null) return;
+    emit(AuthLoading());
     try {
       final credential = PhoneAuthProvider.credential(
         verificationId: _verificationId!,
         smsCode: event.otp,
       );
-      await _signInWithCredential(credential, emit);
+      final result = await _auth.signInWithCredential(credential);
+      await _handleSignIn(result.user!.uid, emit);
     } on FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e.code)));
+      emit(AuthOtpError(e.message ?? 'كود غلط'));
     }
   }
 
-  // ─── Auto verify (Android SMS Retriever) ──────────────────────────────────
-  Future<void> _onAutoVerified(
-    _AutoVerified event,
-    Emitter<AuthState> emit,
-  ) async {
-    emit(AuthOtpVerifying());
-    try {
-      await _signInWithCredential(event.credential, emit);
-    } on FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e.code)));
+  /// بعد اختيار الدور (أول مرة فقط)
+  Future<void> _onRoleSelected(
+      AuthRoleSelected event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      emit(AuthInitial());
+      return;
     }
+    await _db.collection('users').doc(uid).set({
+      'role': event.role,
+      'phone': _auth.currentUser?.phoneNumber,
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    emit(AuthAuthenticated(event.role));
   }
 
-  void _onVerificationFailed(
-    _VerificationFailed event,
-    Emitter<AuthState> emit,
-  ) {
-    emit(AuthError(_mapFirebaseError(event.code)));
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  Future<void> _handleSignIn(String uid, Emitter<AuthState> emit) async {
+    await _routeByRole(uid, emit);
   }
 
-  // ─── تسجيل الدخول + جلب الـ role ─────────────────────────────────────────
-  Future<void> _signInWithCredential(
-    PhoneAuthCredential credential,
-    Emitter<AuthState> emit,
-  ) async {
-    final userCredential = await _auth.signInWithCredential(credential);
-    final uid = userCredential.user!.uid;
-
+  /// يجيب الـ role من Firestore — لو مفيش → يطلب اختيار
+  Future<void> _routeByRole(String uid, Emitter<AuthState> emit) async {
     try {
       final doc = await _db.collection('users').doc(uid).get();
+      final role = doc.data()?['role'] as String?;
 
-      if (!doc.exists) {
-        await _db.collection('users').doc(uid).set({
-          'role': 'customer',
-          'phone': userCredential.user!.phoneNumber,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        emit(AuthSuccess('customer'));
+      if (role == null || role.isEmpty) {
+        // أول مرة — محتاج يختار دور
+        emit(AuthNeedsRoleSelection());
       } else {
-        final role = doc.data()?['role'] ?? 'customer';
-        emit(AuthSuccess(role));
+        // عنده دور محفوظ → روح عليه مباشرة
+        emit(AuthAuthenticated(role));
       }
-    } catch (e) {
-      // Firestore مش شغال بعد — نكمل كـ customer والـ role هيتجلب بعدين
-      emit(AuthSuccess('customer'));
-    }
-  }
-
-  // ─── ترجمة أخطاء Firebase ─────────────────────────────────────────────────
-  String _mapFirebaseError(String code) {
-    switch (code) {
-      case 'invalid-phone-number':
-        return 'رقم الموبايل غلط';
-      case 'invalid-verification-code':
-        return 'الكود اللي دخلته غلط';
-      case 'session-expired':
-        return 'انتهت مدة الكود، اطلب كود جديد';
-      case 'too-many-requests':
-        return 'محاولات كتير، استنى شوية وحاول تاني';
-      case 'network-request-failed':
-        return 'مفيش انترنت، تحقق من الاتصال';
-      default:
-        return 'حصل خطأ، حاول مرة تانية';
+    } catch (_) {
+      emit(AuthNeedsRoleSelection());
     }
   }
 }
