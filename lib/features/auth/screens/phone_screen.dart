@@ -43,8 +43,9 @@ class _PhoneScreenState extends State<PhoneScreen>
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
+      // ✅ PhoneSubmitted — يطابق الـ BLoC الجديد
       context.read<AuthBloc>().add(
-            AuthPhoneSubmitted(_phoneController.text.trim()),
+            PhoneSubmitted(_phoneController.text.trim()),
           );
     }
   }
@@ -54,6 +55,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     return Scaffold(
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
+          // ✅ AuthOtpSent — يطابق الـ BLoC الجديد
           if (state is AuthOtpSent) {
             Navigator.pushNamed(
               context,
@@ -61,13 +63,16 @@ class _PhoneScreenState extends State<PhoneScreen>
               arguments: _phoneController.text.trim(),
             );
           }
+          // ✅ AuthError — يطابق الـ BLoC الجديد
           if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message, style: const TextStyle(fontFamily: 'Cairo')),
+                content: Text(state.message,
+                    style: const TextStyle(fontFamily: 'Cairo')),
                 backgroundColor: AppColors.danger,
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             );
           }
@@ -262,6 +267,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                         // ── زرار الإرسال ───────────────────────────────────
                         BlocBuilder<AuthBloc, AuthState>(
                           builder: (context, state) {
+                            // ✅ AuthPhoneLoading — يطابق الـ BLoC الجديد
                             final isLoading = state is AuthPhoneLoading;
                             return SizedBox(
                               width: double.infinity,

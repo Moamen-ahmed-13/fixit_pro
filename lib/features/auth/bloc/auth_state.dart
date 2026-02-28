@@ -17,6 +17,12 @@ class AuthOtpSent extends AuthState {
 /// جاري التحقق من الكود
 class AuthOtpVerifying extends AuthState {}
 
+/// يوزر جديد — محتاج يختار الـ role
+class AuthNeedsRole extends AuthState {
+  final String uid;
+  AuthNeedsRole(this.uid);
+}
+
 /// تم تسجيل الدخول بنجاح
 class AuthSuccess extends AuthState {
   final String role; // 'customer' | 'technician' | 'admin'

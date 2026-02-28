@@ -14,7 +14,6 @@ class OtpScreen extends StatefulWidget {
 
 class _OtpScreenState extends State<OtpScreen>
     with SingleTickerProviderStateMixin {
-  // 6 حقول — كل واحد بـ controller و focusNode
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes =
@@ -36,7 +35,6 @@ class _OtpScreenState extends State<OtpScreen>
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
     _startResendTimer();
-    // الفوكس على الحقل الأول تلقائياً
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
     });
@@ -67,17 +65,13 @@ class _OtpScreenState extends State<OtpScreen>
     super.dispose();
   }
 
-  String get _otpCode =>
-      _controllers.map((c) => c.text).join();
+  String get _otpCode => _controllers.map((c) => c.text).join();
 
   void _onDigitEntered(int index, String value) {
     if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
-    // لو اكتملت الـ 6 أرقام — اتحقق تلقائياً
-    if (_otpCode.length == 6) {
-      _verify();
-    }
+    if (_otpCode.length == 6) _verify();
   }
 
   void _onBackspace(int index) {
@@ -89,6 +83,7 @@ class _OtpScreenState extends State<OtpScreen>
 
   void _verify() {
     if (_otpCode.length == 6) {
+      // ✅ OtpSubmitted — يطابق الـ BLoC الجديد
       context.read<AuthBloc>().add(OtpSubmitted(_otpCode));
     }
   }
@@ -111,11 +106,12 @@ class _OtpScreenState extends State<OtpScreen>
     return Scaffold(
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
+          // ✅ AuthSuccess — يطابق الـ BLoC الجديد
           if (state is AuthSuccess) {
             _navigateAfterSuccess(context, state.role);
           }
+          // ✅ AuthError — يطابق الـ BLoC الجديد
           if (state is AuthError) {
-            // مسح الأرقام اللي أدخلها
             for (final c in _controllers) { c.clear(); }
             _focusNodes[0].requestFocus();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -142,7 +138,7 @@ class _OtpScreenState extends State<OtpScreen>
                   children: [
                     const SizedBox(height: 24),
 
-                    // ── زرار الرجوع ────────────────────────────────────────
+                    // ── زرار الرجوع ──────────────────────────────────────
                     GestureDetector(
                       onTap: () {
                         context.read<AuthBloc>().add(ResetAuth());
@@ -166,7 +162,7 @@ class _OtpScreenState extends State<OtpScreen>
 
                     const SizedBox(height: 40),
 
-                    // ── أيقونة الرسالة ─────────────────────────────────────
+                    // ── أيقونة الرسالة ───────────────────────────────────
                     Center(
                       child: Container(
                         width: 80,
@@ -187,7 +183,7 @@ class _OtpScreenState extends State<OtpScreen>
 
                     const SizedBox(height: 32),
 
-                    // ── العنوان ────────────────────────────────────────────
+                    // ── العنوان ──────────────────────────────────────────
                     const Text(
                       'أدخل كود التأكيد',
                       style: TextStyle(
@@ -222,7 +218,6 @@ class _OtpScreenState extends State<OtpScreen>
                     const SizedBox(height: 40),
 
                     // ── حقول الـ OTP ─────────────────────────────────────
-                    // نعكس الـ Row عشان RTL (أول رقم على اليمين)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(6, (i) => _buildOtpBox(i)),
@@ -230,9 +225,10 @@ class _OtpScreenState extends State<OtpScreen>
 
                     const SizedBox(height: 40),
 
-                    // ── زرار التحقق ───────────────────────────────────────
+                    // ── زرار التحقق ──────────────────────────────────────
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
+                        // ✅ AuthOtpVerifying — يطابق الـ BLoC الجديد
                         final isLoading = state is AuthOtpVerifying;
                         return SizedBox(
                           width: double.infinity,
@@ -272,13 +268,13 @@ class _OtpScreenState extends State<OtpScreen>
 
                     const SizedBox(height: 24),
 
-                    // ── إعادة الإرسال ─────────────────────────────────────
+                    // ── إعادة الإرسال ────────────────────────────────────
                     Center(
                       child: _canResend
                           ? GestureDetector(
                               onTap: () {
                                 _startResendTimer();
-                                // إعادة إرسال نفس الرقم
+                                // ✅ PhoneSubmitted — يطابق الـ BLoC الجديد
                                 context.read<AuthBloc>().add(
                                       PhoneSubmitted(phone),
                                     );
@@ -314,6 +310,7 @@ class _OtpScreenState extends State<OtpScreen>
                               ),
                             ),
                     ),
+
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -325,7 +322,6 @@ class _OtpScreenState extends State<OtpScreen>
     );
   }
 
-  // ─── بناء كل خانة OTP ───────────────────────────────────────────────────
   Widget _buildOtpBox(int index) {
     return SizedBox(
       width: 48,

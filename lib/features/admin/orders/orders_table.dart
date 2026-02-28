@@ -65,7 +65,6 @@ class LiveOrdersTable extends StatelessWidget {
             ),
           ),
 
-          // الطلبات
           if (orders.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -79,9 +78,9 @@ class LiveOrdersTable extends StatelessWidget {
             )
           else
             ...orders.take(8).map((order) => _OrderRow(
-              order: order,
-              technicians: technicians,
-            )),
+                  order: order,
+                  technicians: technicians,
+                )),
         ],
       ),
     );
@@ -93,11 +92,12 @@ class _OrderRow extends StatelessWidget {
   final List<TechnicianSummary> technicians;
   const _OrderRow({required this.order, required this.technicians});
 
+  // ✅ SlaType enum — مش String
   Color get _slaColor {
     switch (order.slaType) {
-      case 'emergency': return AppColors.danger;
-      case 'urgent':    return AppColors.warning;
-      default:          return AppColors.textMuted;
+      case SlaType.emergency: return AppColors.danger;
+      case SlaType.urgent:    return AppColors.warning;
+      default:                return AppColors.textMuted;
     }
   }
 
@@ -117,7 +117,6 @@ class _OrderRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              // رقم الطلب
               Text(
                 '#${order.id.substring(0, 6).toUpperCase()}',
                 style: const TextStyle(
@@ -129,7 +128,6 @@ class _OrderRow extends StatelessWidget {
               ),
               const SizedBox(width: 10),
 
-              // الجهاز
               Expanded(
                 child: Text(
                   '${order.deviceEmoji} ${order.deviceType} — ${order.brand}',
@@ -143,7 +141,7 @@ class _OrderRow extends StatelessWidget {
                 ),
               ),
 
-              // SLA badge
+              // ✅ SlaType enum — مش String
               Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 8, vertical: 3),
@@ -152,9 +150,9 @@ class _OrderRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  order.slaType == 'emergency'
+                  order.slaType == SlaType.emergency
                       ? '⚡ طارئ'
-                      : order.slaType == 'urgent'
+                      : order.slaType == SlaType.urgent
                           ? '🔶 عاجل'
                           : '🕐 عادي',
                   style: TextStyle(
@@ -172,11 +170,9 @@ class _OrderRow extends StatelessWidget {
 
           Row(
             children: [
-              // الحالة
               _StatusChip(status: order.status),
               const SizedBox(width: 8),
 
-              // العنوان
               Expanded(
                 child: Text(
                   '📍 ${order.address}',
@@ -190,10 +186,10 @@ class _OrderRow extends StatelessWidget {
                 ),
               ),
 
-              // زرار التوزيع لو محتاج
               if (needsDispatch && availableTechs.isNotEmpty)
                 GestureDetector(
-                  onTap: () => _showDispatchSheet(context, order, availableTechs),
+                  onTap: () =>
+                      _showDispatchSheet(context, order, availableTechs),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
@@ -215,12 +211,14 @@ class _OrderRow extends StatelessWidget {
                   ),
                 )
               else if (needsDispatch)
-                const Text('⏳ بدون فني',
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 10,
-                      color: AppColors.warning,
-                    )),
+                const Text(
+                  '⏳ بدون فني',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 10,
+                    color: AppColors.warning,
+                  ),
+                ),
             ],
           ),
         ],
@@ -246,18 +244,21 @@ class _OrderRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('اختار فني للطلب',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textMain,
-                  )),
+              const Text(
+                'اختار فني للطلب',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textMain,
+                ),
+              ),
               const SizedBox(height: 16),
               ...techs.take(5).map((tech) => ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Container(
-                      width: 40, height: 40,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: AppColors.accent.withOpacity(0.1),
                         shape: BoxShape.circle,
@@ -266,29 +267,35 @@ class _OrderRow extends StatelessWidget {
                           child: Text('👨‍🔧',
                               style: TextStyle(fontSize: 18))),
                     ),
-                    title: Text(tech.name,
-                        style: const TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textMain,
-                        )),
+                    title: Text(
+                      tech.name,
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textMain,
+                      ),
+                    ),
                     subtitle: Row(
                       children: [
                         const Icon(Icons.star_rounded,
                             color: AppColors.warning, size: 12),
-                        Text(' ${tech.rating.toStringAsFixed(1)}',
-                            style: const TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 11,
-                              color: AppColors.warning,
-                            )),
-                        Text(' — ${tech.todayOrders} طلب اليوم',
-                            style: const TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 11,
-                              color: AppColors.textMuted,
-                            )),
+                        Text(
+                          ' ${tech.rating.toStringAsFixed(1)}',
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 11,
+                            color: AppColors.warning,
+                          ),
+                        ),
+                        Text(
+                          ' — ${tech.todayOrders} طلب اليوم',
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
                       ],
                     ),
                     trailing: ElevatedButton(
@@ -305,12 +312,14 @@ class _OrderRow extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('تعيين',
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          )),
+                      child: const Text(
+                        'تعيين',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   )),
             ],
@@ -364,6 +373,7 @@ class _LiveBadge extends StatefulWidget {
 class _LiveBadgeState extends State<_LiveBadge>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
+
   @override
   void initState() {
     super.initState();
@@ -371,15 +381,21 @@ class _LiveBadgeState extends State<_LiveBadge>
         vsync: this, duration: const Duration(milliseconds: 900))
       ..repeat(reverse: true);
   }
+
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => FadeTransition(
-    opacity: _ctrl,
-    child: Container(
-      width: 8, height: 8,
-      decoration: const BoxDecoration(
-          color: AppColors.accent, shape: BoxShape.circle),
-    ),
-  );
+        opacity: _ctrl,
+        child: Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+              color: AppColors.accent, shape: BoxShape.circle),
+        ),
+      );
 }

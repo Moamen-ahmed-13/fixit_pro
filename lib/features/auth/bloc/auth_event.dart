@@ -2,6 +2,9 @@ part of 'auth_bloc.dart';
 
 abstract class AuthEvent {}
 
+/// فتح التطبيق — بيتحقق من الجلسة الحالية
+class AppStarted extends AuthEvent {}
+
 /// المستخدم أدخل رقم الموبايل وضغط "ارسل الكود"
 class PhoneSubmitted extends AuthEvent {
   final String phoneNumber;
@@ -22,3 +25,10 @@ class OtpSubmitted extends AuthEvent {
 
 /// إعادة تعيين الحالة (مثلاً عند الرجوع)
 class ResetAuth extends AuthEvent {}
+
+/// اليوزر اختار الـ role في شاشة الاختيار
+class RoleSelected extends AuthEvent {
+  final String uid;
+  final String role;
+  RoleSelected(this.uid, this.role);
+}

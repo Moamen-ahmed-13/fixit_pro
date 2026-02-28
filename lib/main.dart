@@ -40,7 +40,7 @@ class FixItProApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => AuthBloc()..add(AuthCheckStatus()),
+      create: (_) => AuthBloc()..add(AppStarted()),
       child: MaterialApp(
         title: 'FixIt Pro',
         debugShowCheckedModeBanner: false,
@@ -82,11 +82,14 @@ class _AppRouter extends StatelessWidget {
       listener: (context, state) {
         if (state is AuthInitial) {
           Navigator.pushReplacementNamed(context, '/auth');
-        } else if (state is AuthNeedsRoleSelection) {
-          // أول مرة — يختار الدور
-          Navigator.pushReplacementNamed(context, '/role-selector');
-        } else if (state is AuthAuthenticated) {
-          // عنده دور محفوظ — يروح عليه مباشرة
+        }
+        // ✅ يوزر جديد → شاشة اختيار الـ role
+        if (state is AuthNeedsRole) {
+          Navigator.pushReplacementNamed(context, '/role-selector',
+              arguments: state.uid);
+        }
+        // ✅ AuthSuccess — يطابق الـ BLoC الجديد (بدل AuthAuthenticated)
+        if (state is AuthSuccess) {
           switch (state.role) {
             case 'customer':
               Navigator.pushReplacementNamed(context, '/customer/home');
@@ -144,7 +147,8 @@ class _SplashScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+            const CircularProgressIndicator(
+                color: AppColors.primary, strokeWidth: 2),
           ],
         ),
       ),
