@@ -1,6 +1,6 @@
 import 'package:fixit_pro/features/admin/analytics/admin_bloc.dart';
 import 'package:fixit_pro/features/admin/analytics/kpi_card.dart';
-import 'package:fixit_pro/features/admin/analytics/orders_table.dart';
+import 'package:fixit_pro/features/admin/orders/orders_table.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';

@@ -1,6 +1,7 @@
 import 'package:fixit_pro/features/technician/dashboard/tracking_bloc.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TechnicianCard extends StatelessWidget {
   final TechnicianLocation tech;
@@ -14,7 +15,7 @@ class TechnicianCard extends StatelessWidget {
 
   Future<void> _call() async {
     final uri = Uri(scheme: 'tel', path: tech.phone);
-    if (await canLaunchUrl(uri)) launchUrlu(uri);
+    if (await canLaunchUrl(uri)) launchUrl(uri);
   }
 
   Future<void> _whatsapp() async {

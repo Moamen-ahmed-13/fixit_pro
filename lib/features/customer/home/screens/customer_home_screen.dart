@@ -1,26 +1,31 @@
-import 'package:fixit_pro/features/customer/home/home_bloc.dart';
 import 'package:fixit_pro/features/customer/home/order_card.dart';
 import 'package:fixit_pro/features/customer/home/order_model.dart';
 import 'package:fixit_pro/features/customer/home/service_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/home_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class CustomerHomeScreen extends StatefulWidget {
+class CustomerHomeScreen extends StatelessWidget {
   const CustomerHomeScreen({super.key});
 
   @override
-  State<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => HomeBloc()..add(HomeLoaded()),
+      child: const _CustomerHomeView(),
+    );
+  }
 }
 
-class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
-  int _currentTab = 0;
-
+class _CustomerHomeView extends StatefulWidget {
+  const _CustomerHomeView();
   @override
-  void initState() {
-    super.initState();
-    context.read<HomeBloc>().add(HomeLoaded());
-  }
+  State<_CustomerHomeView> createState() => _CustomerHomeViewState();
+}
+
+class _CustomerHomeViewState extends State<_CustomerHomeView> {
+  int _currentTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -254,7 +259,9 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 16),
           // Search Bar
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, '/customer/search'),
+            onTap: () {
+              Navigator.pushNamed(context, '/customer/search');
+            }, // TODO: search screen
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(

@@ -83,4 +83,5 @@ class DefaultFirebaseOptions {
     authDomain: 'fixi-pro.firebaseapp.com',
     storageBucket: 'fixi-pro.firebasestorage.app',
   );
+
 }

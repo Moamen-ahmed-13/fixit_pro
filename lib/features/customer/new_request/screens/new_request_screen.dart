@@ -3,7 +3,8 @@ import 'package:fixit_pro/features/customer/new_request/selectable_chip.dart';
 import 'package:fixit_pro/features/customer/new_request/step_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../../core/theme/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ─── بيانات الخدمة ────────────────────────────────────────────────────────────
 const _devices = [

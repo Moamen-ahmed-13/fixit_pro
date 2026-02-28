@@ -1,9 +1,9 @@
-import 'package:fixit_pro/features/auth/auth_bloc.dart';
+import 'package:fixit_pro/features/auth/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
-import '../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
@@ -112,7 +112,7 @@ class _OtpScreenState extends State<OtpScreen>
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
-            _navigateAfterSuccess(context, state.userRole);
+            _navigateAfterSuccess(context, state.role);
           }
           if (state is AuthError) {
             // مسح الأرقام اللي أدخلها
